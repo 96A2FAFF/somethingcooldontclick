@@ -1,0 +1,815 @@
+-- ANTIAIM REFERENCES
+
+local ffi = require("ffi")
+local js = panorama['open']()
+local MyPersonaAPI, LobbyAPI, PartyListAPI, FriendsListAPI, GameStateAPI = js['MyPersonaAPI'], js['LobbyAPI'], js['PartyListAPI'], js['FriendsListAPI'], js['GameStateAPI']
+
+local android_notify=(function()local a={callback_registered=false,maximum_count=7,data={}}function a:register_callback()if self.callback_registered then return end;client.set_event_callback('paint_ui',function()local b={client.screen_size()}local c={56,56,57}local d=5;local e=self.data;for f=#e,1,-1 do self.data[f].time=self.data[f].time-globals.frametime()local g,h=255,0;local i=e[f]if i.time<0 then table.remove(self.data,f)else local j=i.def_time-i.time;local j=j>1 and 1 or j;if i.time<0.5 or j<0.5 then h=(j<1 and j or i.time)/0.5;g=h*255;if h<0.2 then d=d+15*(1.0-h/0.2)end end;local k={renderer.measure_text(nil,i.draw)}local l={b[1]/2-k[1]/2+3,b[2]-b[2]/100*17.4+d}renderer.circle(l[1],l[2],c[1],c[2],c[3],g,20,180,0.5)renderer.circle(l[1]+k[1],l[2],c[1],c[2],c[3],g,20,0,0.5)renderer.rectangle(l[1],l[2]-20,k[1],40,c[1],c[2],c[3],g)renderer.text(l[1]+k[1]/2,l[2],255,255,255,g,'c',nil,i.draw)d=d-50 end end;self.callback_registered=true end)end;function a:paint(m,n)local o=tonumber(m)+1;for f=self.maximum_count,2,-1 do self.data[f]=self.data[f-1]end;self.data[1]={time=o,def_time=o,draw=n}self:register_callback()end;return a end)()
+
+ffi.cdef[[
+  typedef struct
+  {
+    int64_t pad_0;
+    union {
+      int xuid;
+      struct {
+        int xuidlow;
+        int xuidhigh;
+      };
+    };
+    char name[128];
+    int userid;
+    char guid[33];
+    unsigned int friendsid;
+    char friendsname[128];
+    bool fakeplayer;
+    bool ishltv;
+    unsigned int customfiles[4];
+    unsigned char filesdownloaded;
+  } S_playerInfo_t;
+
+  typedef bool(__thiscall* fnGetPlayerInfo)(void*, int, S_playerInfo_t*);
+
+  typedef void(__thiscall* clientcmdun)(void*, const char* , bool);
+  
+  typedef bool(__thiscall* is_in_game)(void*);
+  
+  typedef bool(__thiscall* is_connected)(void*, bool);
+  
+  typedef int(__thiscall* get_local_player_ffi)(void*);
+
+  typedef void*(__thiscall* get_net_channel_info_t)(void*);
+
+  typedef float(__thiscall* get_avg_latency_t)(void*, int);
+  typedef float(__thiscall* get_avg_loss_t)(void*, int);
+  typedef float(__thiscall* get_avg_choke_t)(void*, int);
+]]
+
+
+
+
+local pEngineClient = ffi.cast(ffi.typeof("void***"), client.create_interface("engine.dll", "VEngineClient014"))
+
+-- c++ function predefs
+
+
+local fnGetPlayerInfo = ffi.cast("fnGetPlayerInfo", pEngineClient[0][8])
+local clientcmdun = ffi.cast("clientcmdun", pEngineClient[0][114])
+
+-- c++ function predefs
+local pinfo_struct = ffi.new("S_playerInfo_t[1]")
+local lp_entidx = entity.get_local_player()
+local steamid = nil
+local pritsteamid = nil
+
+if lp_entidx then
+    fnGetPlayerInfo(pEngineClient, lp_entidx, pinfo_struct)
+    steamid = pinfo_struct[0].xuid
+    pritsteamid = ffi.string(pinfo_struct[0].guid)
+end
+local local_id = steamid
+local return_name_string = entity.get_player_name(entity.get_local_player())
+
+
+-- c++ function predefs
+
+local is_valid_user = 0
+local nickname = 'unknown'
+
+--convert steamid 3 to 64 
+
+local function steam_64(steamid3)
+
+if steamid3 == nil then
+clientcmdun(pEngineClient , "clear" , false)
+end
+
+    local y
+    local z
+        
+    if ((steamid3 % 2) == 0) then
+        y = 0
+        z = (steamid3 / 2)
+    else
+        y = 1
+        z = ((steamid3 - 1) / 2)
+    end
+	
+    return '7656119' .. ((z * 2) + (7960265728 + y))
+end
+--convert steamid 3 to 64 
+
+local shit_id = entity.get_steam64(entity.get_local_player())
+
+
+if (MyPersonaAPI.GetXuid() ~= steam_64(local_id)) then
+	is_valid_user = 0
+	clientcmdun(pEngineClient , "quit" , false)
+end
+
+if (shit_id ~= steamid) then
+	is_valid_user = 0
+	clientcmdun(pEngineClient , "quit" , false)
+end
+
+-- old id:1033805185
+local steam_ids = {
+    sheezy = 1103003647,
+    robban = 1084288346,
+    ABA1 = 21685450,
+    ABA = 303059723,
+    Skiderino = 1132919303,
+	Skiderino2 = 110731965,
+    Bean = 1113375862,
+    ayden = 1623835,
+    dankememe = 3218321,
+	japan = 1107127362,
+    fnx = 1104447684,
+    Bean = 1113375862,
+	rouke = 923326063,
+    she = 1108308595,
+    Skiderino3 = 1135782804,
+    volar = 1136426875,
+    deadshot = 916958766,
+    fnx2 = 432996279,
+    sheee = 238289567,
+    blue = 1056338747,
+    Julian = 49519190,
+    blacklist = 124085815,
+    dan = 1037413604,
+    fl1nt = 164659442,
+    fl1nt2 = 1050374671,
+	SouLlss = 2633990,
+    SouLlss2 = 1086859886,
+    Avatar = 1108138761,
+    aok = 12436497,
+    raxy = 1100119659,
+	rouke = 921342648,
+	rouke2 = 1117425693,
+    berthiee = 431493638,
+    berthiee2 = 77651,
+    AKINCILAR = 159862033,
+    AKINCILAR2 = 93407211,
+	JINU = 912159140,
+	quadrosmother = 183808393,
+	chris = 844040906,
+	derp = 258322193,
+	cristianadv = 372254414,
+	quadrosbrother = 894735284,
+	can = 1136690018,
+	derp2 = 1026424656,
+	kingvon = 1105140014,
+	trixy = 1081975433,
+	escobar = 192186675,
+	q8 = 1136955452,
+	avishay = 284086008,
+	twinxy = 922629305,
+	droguler = 1096712136,
+	cyko = 212976795,
+	woofTHEHVHBOSS = 169085243,
+	False = 881486984,
+	playboy = 116231517,
+	jinu2 = 965377831,
+	zaldyhello = 378802695,
+	Twinxy2 = 946417991,
+	Twinxy3 = 88855325,
+	Twinxy4 = 435991827,
+	alonso = 1034252280,
+    tachee = 5896136,
+    shakes = 883159571,
+	derakkitten = 1116152839,
+	land = 913181623,
+	land2 = 218963029,
+	land3 = 1024772,
+	land4 = 1027481704,
+    ocioregele = 1120011166,
+    skeetuser = 489182246,
+	ariel = 1142656457,
+	ariel2 = 386430114,
+	droguler2 = 1125675365,
+	chlenix = 907930419,
+	kori228 = 1143810710,
+	fluffy = 179855137,
+	JINU3 = 1117175046,
+    derp3 = 1113182687,
+	chris99 = 844040906,
+	shulya = 500777671,
+	false222 = 881486984,
+	kori1337228owo = 1142550573,
+	can123 = 1136690018,
+	can1234 = 850352828,
+	animesh123 = 263689336,
+	Hamad = 1107915857,
+	xerytas = 1098852721,
+	raxysweden = 249722380,
+	deluxe = 254713911,
+	vertual = 1081941337
+}
+
+local check_user = function(steamid)
+    if (not steamid) then
+        return false
+    end
+
+    for i, k in pairs(steam_ids) do
+        local current_id = steam_ids[i]
+    
+        if (current_id == steamid) then
+            nickname = i
+            return true
+        end
+    end
+    print("Buy lua script at: shoppy.gg/@shee ")
+    android_notify:paint(5, "Buy lua script at: shoppy.gg/@shee ")
+    return false
+end
+
+if is_valid_user ~= 1 then
+    if(check_user(local_id)) then
+        is_valid_user = 1
+    else
+        is_valid_user = 0
+    end
+end
+  
+if is_valid_user ~= 1 then return end
+
+android_notify:paint(5, nickname ..", welcome to logicalyaw !")
+
+-- variables
+local pitch = ui.reference("AA", "Anti-aimbot angles", "Pitch")
+local yaw_base = ui.reference("AA", "Anti-aimbot angles", "Yaw base")
+local yaw_opt, yaw_slider = ui.reference("AA", "Anti-aimbot angles", "Yaw")
+local yaw_jitter, yaw_jitter_slider = ui.reference("AA", "Anti-aimbot angles", "Yaw jitter")
+local bodyyaw, bodyyaw_slider = ui.reference("AA", "Anti-aimbot angles", "Body yaw")
+local freestandbodyyaw = ui.reference("AA", "Anti-aimbot angles", "Freestanding body yaw")
+local lby = ui.reference("AA", "Anti-aimbot angles", "Lower body yaw target")
+local limit = ui.reference("AA", "Anti-aimbot angles", "Fake Yaw Limit")
+local legs = ui.reference("AA", "Other", "Leg movement")
+local fakeduck = ui.reference("RAGE", "Other", "Duck peek assist")  
+local onshotaa, onshotaa_hk = ui.reference("AA", "Other", "On shot anti-aim")
+local min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage")
+local double_tap, double_tap_key = ui.reference("RAGE", "Other", "Double tap")
+local double_tap_mode = ui.reference("RAGE", "Other", "Double tap mode")
+local double_tap_fake_lag_limit = ui.reference("RAGE", "Other", "Double tap fake lag limit")
+local freestanding_option, freestanding_state = ui.reference("AA", "Anti-aimbot angles", "Freestanding")
+local slow_motion, slow_motion_hk = ui.reference("AA", "Other", "Slow motion")
+local safepoint = ui.reference("RAGE", "Aimbot", "Force safe point")
+local fbaim = ui.reference("RAGE", "Other", "Force body aim")
+local fake_lag = ui.reference("AA", "Fake lag", "Limit")
+local sv_maxusrcmdprocessticks = ui.reference("MISC", "Settings", "sv_maxusrcmdprocessticks")
+local target_selection = ui.reference("RAGE", "Aimbot", "Target selection")
+
+-- menu items
+local enable_antiaim = ui.new_checkbox("AA", "Anti-aimbot angles", "Anti Aim")
+local ind_clr_lbl = ui.new_label("AA", "anti-aimbot angles", "Indicators color")
+local manual_clr = ui.new_color_picker("AA", "Anti-aimbot angles", "\nIndicators color", 150, 162, 250, 255)
+local showindicators = ui.new_checkbox("AA", "Anti-aimbot angles", "Show indicators")
+local multiselect_indicators_aa = ui.new_multiselect("AA", "anti-aimbot angles", "AA side", "Main circle", "Real")
+local circlelabel = ui.new_label("AA", "Anti-aimbot angles", "Circle color")
+local circle_colorpicker = ui.new_color_picker("AA", "Anti-aimbot angles", "circle color")
+local radius_indicators = ui.new_slider("AA", "anti-aimbot angles", "\n Radius", 1, 10, 3)
+local enable_on_sw = ui.new_checkbox("AA", "Anti-aimbot angles", "slowmotion better aa")
+local e_desync = ui.new_checkbox("AA", "Anti-aimbot angles", "legit aa on e key")
+local slide = ui.new_checkbox("AA", "Anti-aimbot angles", "adaptive slide")
+local near_target = ui.new_hotkey("RAGE", "Aimbot", "Near Crosshair on key")
+local fasterdt = ui.new_checkbox("RAGE", "Other", "quicker doubletap (unstable)")
+local auto_direction_mode = ui.new_combobox("AA", "Anti-aimbot angles", "Auto direction mode", "Safe head")
+local auto_dir_default = ui.new_checkbox("AA", "Anti-aimbot angles", "Use skeet auto direction")
+local anti_resolver = ui.new_checkbox("AA", "Anti-aimbot angles", "anti resolver")
+local off_jitter = ui.new_slider("AA", "Anti-aimbot angles", "off jitter", "0", "180", "0", true, "", 1, tooltips)
+local enable_manual = ui.new_checkbox("AA", "Anti-aimbot angles", "Enable manual aa")
+local key_left = ui.new_hotkey("AA", "Anti-aimbot angles", "Left", false)
+local key_right = ui.new_hotkey("AA", "Anti-aimbot angles", "Right", false)
+local key_back = ui.new_hotkey("AA", "Anti-aimbot angles", "Back", false)
+local arrow_distance = ui.new_slider("AA", "Anti-aimbot angles", "\n arrow_dist", 0, 50)
+local show_inactive_arrows = ui.new_checkbox("AA", "Anti-aimbot angles", "Show inactive arrows")
+local inactive_arrow_clr = ui.new_color_picker("AA", "Anti-aimbot angles", " \n Inactive clr", 255, 255, 255, 200)
+-- menu items
+
+local in_usage = false
+local local_player = entity.get_local_player()
+local target_selection_old_val = ui.get(target_selection) 
+local hit_count = 0
+local lasthit = globals.curtime()
+local in_air = false
+
+local scrsize_x, scrsize_y = client.screen_size()
+local center_x, center_y = scrsize_x / 2, scrsize_y / 2
+-- variables
+local manual_state = -1 -- -1 = manual off, 0 = backwards, 1 = left, 2 = right
+local last_press = globals.curtime()
+	
+local function get_direction()
+	if not ui.get(enable_manual) then
+		manual_state = -1
+		return
+	end
+    if ui.get(key_back) and globals.curtime() >= last_press + 0.2 then
+        manual_state = manual_state == 0 and -1 or 0
+        last_press = globals.curtime()
+    elseif ui.get(key_left) and globals.curtime() >= last_press + 0.2 then
+        manual_state = manual_state == 1 and -1 or 1
+        last_press = globals.curtime()
+    elseif ui.get(key_right) and globals.curtime() >= last_press + 0.2 then
+        manual_state = manual_state == 2 and -1 or 2
+        last_press = globals.curtime()
+    end
+end
+
+local function draw_direction(c)
+
+	local hp = entity.get_prop(entity.get_local_player(), "m_iHealth")
+	if hp <= 0 then
+		return
+	end
+
+	local arrow_left, arrow_right, arrow_back
+	local dist = (50 - ui.get(arrow_distance)) 
+	local r, g, b, a = ui.get(manual_clr)
+	local r1, g1, b1, a1 = ui.get(inactive_arrow_clr)
+	
+	arrow_left = "⯇"
+	arrow_right = "⯈"
+	
+	if manual_state == 0 then
+		if ui.get(show_inactive_arrows) then
+			renderer.text(center_x - dist - 7, center_y, r1, g1, b1, a1, "cb+", 0, arrow_left)
+			renderer.text(center_x + dist + 6, center_y, r1, g1, b1, a1, "cb+", 0, arrow_right)
+		end
+	elseif manual_state == 2 then
+		renderer.text(center_x + dist + 6, center_y, r, g, b, a, "cb+", 0, arrow_right)
+		if ui.get(show_inactive_arrows) then
+			renderer.text(center_x - dist - 7, center_y, r1, g1, b1, a1, "cb+", 0, arrow_left)
+		end
+	elseif manual_state == 1 then
+        renderer.text(center_x - dist - 7, center_y, r, g, b, a, "cb+", 0, arrow_left)
+        if ui.get(show_inactive_arrows) then
+            renderer.text(center_x + dist + 6,  center_y, r1, g1, b1, a1, "cb+", 0, arrow_right)
+        end
+	end
+end
+
+
+local function set_direction()
+	if manual_state == 1 then
+		ui.set(yaw_base, "Local view")
+		ui.set(yaw_slider, -90)
+	elseif manual_state == 2 then
+		ui.set(yaw_base, "Local view")
+		ui.set(yaw_slider, 90)
+	elseif manual_state == 0 or manual_state == -1 then
+		ui.set(yaw_base, manual_state == 0 and "Local view" or "At targets")
+		ui.set(yaw_slider, 0)
+	end
+end
+
+client.set_event_callback("paint", function(ctx)
+	ui.set_visible(inactive_arrow_clr, ui.get(show_inactive_arrows))
+	
+	ui.set(key_left, "On hotkey")
+	ui.set(key_right, "On hotkey")
+	ui.set(key_back, "On hotkey")
+	
+	get_direction()
+	set_direction()
+	draw_direction(ctx)
+end)
+
+local function get_FOV(view_angles, start_pos, end_pos)
+    local sin_pitch, cos_pitch, sin_yaw, cos_yaw = math.sin(math.rad(view_angles[1])), math.cos(math.rad(view_angles[1])), math.sin(math.rad(view_angles[2])), math.cos(math.rad(view_angles[2]))
+
+    local fwd = { cos_pitch * cos_yaw, cos_pitch * sin_yaw, -sin_pitch }
+    local delta = {end_pos[1] - start_pos[1], end_pos[2] - start_pos[2], end_pos[3] - start_pos[3]}
+    local delta_length = delta[1] + delta[2] + delta[3]
+    delta = { delta[1] / delta_length, delta[2] / delta_length, delta[3] / delta_length }
+    local dot_val = fwd[1] * delta[1] + fwd[2] * delta[2] + fwd[3] * delta[3]
+    local fov = math.acos( dot_val / delta_length );
+
+    return math.max( 0.0, math.deg( fov ) );
+end
+
+lowestfov = math.huge
+lowestdmg = math.huge  
+local closestEnemy = nil
+
+local function isEnemyClosest(index)
+    if entity.is_dormant(index) then return end
+    fov = get_FOV({client.camera_angles()}, {client.eye_position()}, {entity.hitbox_position(index, 0)})
+    if(fov < lowestfov) then
+        lowestfov = fov
+        closestEnemy = index
+    end
+end
+
+local function v2_closestPoint(ax, ay, bx, by, px, py)
+    local destination = { x = bx - ax, y = by - ay }
+    local direction = { x = px - bx, y = py - by }
+    local length = math.sqrt(direction.x ^ 2 + direction.y ^ 2)
+
+    local direction = { x = direction.x / length, y = direction.y / length }
+
+    local ray_along = { x = destination.x * direction.x, y = destination.y * direction.y }
+
+    if ray_along.x + ray_along.y < 0 then
+        return bx, by
+    elseif ray_along.x + ray_along.y > length then
+        return px, py
+    end
+
+    return (bx + direction.x) * ray_along.x, (by + direction.y) * ray_along.y
+end
+
+function CalcAngle(localplayerxpos, localplayerypos, expos, eypos)
+    relativeyaw = math.atan( (localplayerypos - eypos) / (localplayerxpos - expos) )
+    return relativeyaw * 180 / math.pi
+end
+
+function calculateBestAngle(enemy, ...)
+    local lx, ly, lz = entity.get_prop(local_player, "m_vecOrigin")
+    ex, ey, ez = entity.get_prop(enemy, "m_vecOrigin")
+    bestangle = nil
+
+    if entity.is_alive(enemy) then
+        yaw = CalcAngle(lx, ly, ex, ey)
+        for i,v in pairs({...}) do
+            dir_x, dir_y = math.cos(math.rad(yaw + v)), math.sin(math.rad(yaw + v)), 0
+            end_x = lx + dir_x * 55
+            end_y = ly + dir_y * 55
+            end_z = lz + 80
+
+            index, damage = client.trace_bullet(enemy, ex, ey, ez + 70, end_x, end_y, end_z)
+
+            index2, damage2 = client.trace_bullet(enemy, ex, ey, ez + 70, end_x + 12, end_y, end_z) 
+
+            index3, damage3 = client.trace_bullet(enemy, ex, ey, ez + 70, end_x - 12, end_y, end_z)
+
+            if(damage < lowestdmg) then
+                lowestdmg = damage
+                if(damage2 > damage) then
+                    lowestdmg = damage2
+                end
+                if(damage3 > damage) then
+                    lowestdamage = damage3
+                end 
+                if(lx - ex > 0) then 
+                    bestangle = v
+                else
+                    bestangle = v * -1
+                end
+                else if(damage == lowestdmg) then
+                    return bestangle
+                end
+            end
+        end
+    end
+
+    return bestangle
+end
+-- calculation functions
+
+-- funcs
+
+local function set_jitter()
+    if in_usage then return end
+
+    ui.set(pitch, "Down")
+    ui.set(yaw_opt, "180")
+    ui.set(yaw_jitter, "Random")
+    ui.set(yaw_jitter_slider, ui.get(off_jitter))
+    ui.set(bodyyaw, "Static")
+    local sld_val = math.random(30, 90)
+    local sld_val = ui.get(bodyyaw_slider) > 0 and -sld_val or sld_val
+    ui.set(bodyyaw_slider, sld_val)
+    ui.set(lby, "Eye yaw")
+    ui.set(limit, hit_count > 0 and math.random(25, 50) or math.random(25, 55))
+    ui.set(freestandbodyyaw, true)
+end
+
+local function is_hittable(ent)
+    if not ent then return false end
+
+    local lx, ly, lz = client.eye_position()
+    local ex, ey, ez = entity.hitbox_position(ent, 0)
+
+    local evx, evy, evz = entity.get_prop(ent, "m_vecVelocity")
+    local lvx, lvy, lvz = entity.get_prop(local_player, "m_vecVelocity")
+
+    if not lx or not ly or not lz or not ex or not ey or not ez then
+        return false
+    end
+
+    for i = 1, 8 do
+        lx, ly, lz = entity.hitbox_position(local_player, i)
+        local index, dmg = client.trace_bullet(ent, ex, ey, ez, lx, ly, lz)
+
+        if dmg > 0 then
+            return true
+        end
+    end
+
+    lx, ly, lz = client.eye_position()
+    for i = 1, 10 do
+        local lpx, lpy, lpz = lx + lvx * globals.tickinterval() * i, ly + lvy * globals.tickinterval() * i, lz + lvz * globals.tickinterval() * i
+        local tex, tey, tez = ex + evx * globals.tickinterval() * i, ey + evy * globals.tickinterval() * i, ez + evz * globals.tickinterval() * i
+        local index, dmg = client.trace_bullet(ent, tex, tey, tez, lpx, lpy, lpz)
+
+        if dmg > 0 then
+            return true
+        end
+    end
+    return false
+end
+
+-- event callbacks
+
+ui.set_callback(fasterdt, function() ui.set(sv_maxusrcmdprocessticks, ui.get(fasterdt) and 62 or 16) cvar.cl_clock_correction:set_int(ui.get(fasterdt) and 0 or 1) end)
+ui.set_callback(fake_lag, function() ui.set(fake_lag, math.min(15, ui.get(fake_lag))) end)
+
+ui.set_callback(enable_antiaim, function(c)
+    local state = ui.get(enable_antiaim)
+
+ --   ui.set_visible(auto_direction_mode, state)
+    ui.set_visible(slide, state)
+    ui.set_visible(off_jitter, state)
+    ui.set_visible(anti_resolver, state)
+    ui.set_visible(fasterdt, state)
+    ui.set_visible(e_desync, state)
+end)
+
+client.set_event_callback("bullet_impact", function(c)
+    if not ui.get(anti_resolver) then return end
+    if not entity.is_alive(local_player) then return end
+
+    local ent = client.userid_to_entindex(c.userid)
+    if entity.is_dormant(ent) or not entity.is_enemy(ent) then return end
+
+    local ox, oy = entity.hitbox_position(ent, 0)
+    local px, py = entity.hitbox_position(ent, 3)
+    local ex, ey = client.eye_position()
+
+    local cpx, cpy = v2_closestPoint(ex, ey, ox, oy, c.x, c.y)
+    local distance_head = { x = ex - cpx, y = ey - cpy }
+    local distance_pelvis = { x = px - cpx, y = py - cpy }
+    local delta_2d = math.sqrt(math.min( (distance_head.x ^ 2 + distance_head.y ^ 2), (distance_pelvis.x ^ 2 + distance_pelvis.y ^ 2) ) )
+
+    if math.abs(delta_2d) < 50 and globals.curtime() > lasthit + 0.05 then
+        lasthit = globals.curtime()
+        hit_count = hit_count + 1
+    end
+end)
+
+client.set_event_callback("round_prestart", function()
+    hit_count = 0
+    lasthit = globals.curtime() + 4
+    last_press = globals.curtime()
+end)
+
+local was_holding = false
+
+client.set_event_callback("run_command", function()
+    in_air = bit.band(entity.get_prop(local_player, "m_fFlags"), 1) == 0
+
+    if globals.curtime() >= lasthit + 4 then
+        hit_count = 0
+    end
+
+    if ui.get(slide) then
+        p = math.random(1, 3)
+        ui.set(legs, p == 1 and "Off" or p == 2 and "Always slide" or p == 3 and "Never slide")
+    end
+
+    if ui.get(near_target) then
+    	if not was_holding then
+    		target_selection_old_val = ui.get(target_selection)
+    		was_holding = true
+    	end
+    	ui.set(target_selection, "Near crosshair")
+    else
+    	if was_holding then
+    		was_holding = false
+    		ui.set(target_selection, target_selection_old_val)
+    	end
+    end    
+end)
+
+client.set_event_callback("paint", function()
+    local_player = entity.get_local_player()
+
+    local alive = entity.is_alive(local_player)
+
+    local aa_state = ui.get(enable_antiaim)
+
+    ui.set_visible(pitch, not aa_state)
+    ui.set_visible(yaw_opt, not aa_state)
+    ui.set_visible(yaw_slider, not aa_state)
+    ui.set_visible(yaw_jitter, not aa_state)
+    ui.set_visible(yaw_jitter_slider, not aa_state)
+    ui.set_visible(bodyyaw, not aa_state)
+    ui.set_visible(bodyyaw_slider, not aa_state)
+    ui.set_visible(freestandbodyyaw, not aa_state)
+    ui.set_visible(lby, not aa_state)
+    ui.set_visible(limit, not aa_state)
+    ui.set_visible(yaw_base, not aa_state)
+
+    if not aa_state then return end
+
+    if not local_player or not alive then return end
+
+    local body_yaw = math.max(-60, math.min(60, math.floor((entity.get_prop(local_player, "m_flPoseParameter", 11) or 0)*120-60+0.5)))
+    local absb = math.abs(body_yaw)
+
+    local p = absb / 60
+
+    local side = body_yaw > 0 and -1 or 1
+
+    local r, g, b = 192 - (p * 71), 32 + (p * 146), 28
+
+    local _, head_rot = entity.get_prop(entity.get_local_player(), "m_angAbsRotation")
+    local _, fake_rot = entity.get_prop(entity.get_local_player(), "m_angEyeAngles")
+    local lby_rot = entity.get_prop(entity.get_local_player(), "m_flLowerBodyYawTarget")
+    local _, cam_rot = client.camera_angles()
+    local c3d = { degrees=60, start_at=head_rot, start_at2=fake_rot, start_at3=lby_rot }
+    local radius_ = ui.get(radius_indicators)
+
+   	local r, g, b = ui.get(circle_colorpicker)
+
+   	local options = ui.get(multiselect_indicators_aa)
+
+    for i=1, #options do
+        opt = options[i]
+        if ui.get(showindicators) then
+	        if opt == "Main circle" then
+	            if side ~= 0 then
+	                if side == 1 then
+	                    renderer.circle_outline(center_x, center_y, 10, 10, 10, 125, radius_*2+4*i, 0, 4, 5.9)
+	                    renderer.circle_outline(center_x, center_y,  r, g, b, 255, radius_*2+3*i, 90, 0.5, 3.9)
+	                else
+	                    renderer.circle_outline(center_x, center_y, 10, 10, 10, 125, radius_*2+4*i, 0, 4, 5.9)
+	                    renderer.circle_outline(center_x, center_y ,  r, g, b, 255, radius_*2+3*i, -90, 0.5, 3.9)
+	                end
+	            end
+
+	        elseif opt == "Real" then
+	        	c3d.start_at = cam_rot-c3d.start_at-120
+	            renderer.circle_outline(center_x, center_y, r, g, b, 255, radius_*2+5*i, c3d.start_at,  0.17, 4)
+	        else
+	            c3d.start_at = cam_rot-c3d.start_at-120
+	            renderer.circle_outline(center_x, center_y, r, g, b, 255, radius_*2+5*i, c3d.start_at,  0.17, 4)
+	        end
+	    end
+    end
+
+    local next_attack = math.huge
+    pcall(function()
+      next_attack = math.max(entity.get_prop(entity.get_prop(local_player, "m_hActiveWeapon"), "m_flNextPrimaryAttack")+0.25 or 0, entity.get_prop(local_player, "m_flNextAttack") or 0)
+     end)
+
+    local tbl_text = {}
+    local tbl_color = {}
+    
+    local ds_text = tostring(absb)
+    
+    table.insert(tbl_text, ds_text)
+
+    table.insert(tbl_text, ui.get(min_dmg))
+
+  
+    if ui.get(fbaim) or ui.get(safepoint) then
+        table.insert(tbl_text, "VERY SAFE")
+    end
+
+    if ui.get(onshotaa) and ui.get(onshotaa_hk) then
+        table.insert(tbl_text, "ONSHOT")
+    end
+
+    if ui.get(freestanding_state) and ui.get(freestanding_option) then
+        table.insert(tbl_text, "FREESTAND")
+    end
+
+
+
+    if ui.get(target_selection) == "Near crosshair" then
+    	table.insert(tbl_text, "CROSSHAIR")
+    end
+
+    local r, g, b, a = ui.get(manual_clr)
+
+    for i, v in next, tbl_text do
+        pcall(function()
+            renderer.text(center_x - renderer.measure_text("-", v)/2, center_y + 5 + (10 * i), r, g, b, a, "-", 0, v)
+        end)
+    end
+
+    if ui.get(double_tap) and ui.get(double_tap_key) then
+        table.insert(tbl_text, "DT")
+        if next_attack <= globals.curtime() then
+            renderer.text(center_x - renderer.measure_text("-", v)/2, center_y + 5 + (10 * #tbl_text+1), r, g, b, a, "-", 0, "DT")
+        else
+            renderer.text(center_x - renderer.measure_text("-", v)/2, center_y + 5 + (10 * #tbl_text+1), 255, 0, 0, 255, "-", 0, "DT")
+        end
+    end
+end)
+
+client.set_event_callback("run_command", function() 
+
+    if not ui.get(enable_antiaim) then return end
+
+    if ui.get(slide) then
+        entity.set_prop(local_player, "m_flPoseParameter", 1, 0)
+    end
+
+    if in_usage then return end
+
+        ui.set(pitch, "Down")
+        ui.set(yaw_jitter, "Off")
+        ui.set(bodyyaw, "Static")
+        ui.set(bodyyaw_slider, 90)
+        ui.set(limit, hit_count > 0 and math.random(25, 50) or math.random(25, 50))
+
+
+    set_jitter()
+
+    for i,v in next, entity.get_players(true) do
+        isEnemyClosest(v)
+    end
+    
+    local value = 0
+
+    if in_air or ( closestEnemy and entity.is_alive(closestEnemy) and not entity.is_dormant(closestEnemy) ) or ui.get(auto_dir_default) then
+        if in_air or globals.curtime() < lasthit + 0.8 or is_hittable(closestEnemy) or (ui.get(enable_on_sw) and ui.get(slow_motion) and ui.get(slow_motion_hk)) or ui.get(auto_dir_default) then
+            local yaw = nil
+
+            if (ui.get(enable_on_sw) and ui.get(slow_motion) and ui.get(slow_motion_hk)) and not is_hittable(closestEnemy) then
+                ui.set(yaw_jitter, "Off")
+                ui.set(bodyyaw, "Jitter")
+				ui.set(freestandbodyyaw, false)
+                ui.set(bodyyaw_slider, 30)
+                ui.set(lby, "Eye yaw")
+                ui.set(limit, 30)
+                return
+            end
+
+		
+            if is_hittable(closestEnemy) or globals.curtime() < lasthit + 0.8 then
+                yaw = calculateBestAngle(closestEnemy, -90, 90)
+            elseif in_air or ui.get(auto_dir_default) then
+                yaw = 58
+            end
+            
+            if yaw then
+                value = ui.get(auto_dir_default) and 90 or ui.get(auto_direction_mode) == "Safe head" and 90 and -90
+                if globals.curtime() > lasthit + 0.8 and hit_count == 0 then
+                    value = yaw < 0 and -value or value
+                end
+                value = ( hit_count ~= 0 and hit_count % 2 == 0 and ui.get(anti_resolver) ) and -value or value
+                ui.set(bodyyaw, "Static")
+                ui.set(bodyyaw_slider, math.random(90))
+                ui.set(freestandbodyyaw, ui.get(auto_dir_default) and true or false)
+                ui.set(yaw_jitter, "Off")
+                ui.set(lby, "Eye yaw")
+                ui.set(limit, 30)
+            end
+            lowestfov = 999
+            lowestdmg = 999
+        end
+    end
+end)
+
+client.set_event_callback("setup_command", function(e)
+    if not ui.get(e_desync) or not ui.get(enable_antiaim) then in_usage = false return end
+
+    local weap = entity.get_classname(entity.get_prop(local_player, "m_hActiveWeapon"))
+
+    in_usage = e.in_use == 1
+
+    if weap ~= nil and weap == "CC4" then
+        if e.in_attack == 1 then
+            e.in_attack = 0
+            e.in_use = 1
+        end
+    else
+        if e.chokedcommands == 0 and e.in_use == 1 then
+            e.in_use = 0
+            ui.set(bodyyaw, "Opposite")
+            ui.set(yaw_jitter, "Off")
+            ui.set(limit, 59)
+            ui.set(freestandbodyyaw, true)
+        end
+    end
+
+end)
+
+client.set_event_callback("shutdown", function()
+    ui.set_visible(pitch, true)
+    ui.set_visible(yaw_opt, true)
+    ui.set_visible(yaw_slider, true)
+    ui.set_visible(yaw_jitter, true)
+    ui.set_visible(yaw_jitter_slider, true)
+    ui.set_visible(bodyyaw, true)
+    ui.set_visible(bodyyaw_slider, true)
+    ui.set_visible(freestandbodyyaw, true)
+    ui.set_visible(lby, true)
+    ui.set_visible(limit, true)
+    ui.set_visible(yaw_base, true)
+end)
